@@ -1,0 +1,111 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Daika7ana\Innoship\Tests\Unit\Support;
+
+use Daika7ana\Innoship\Exceptions\AuthenticationException;
+use Daika7ana\Innoship\Exceptions\UnexpectedStatusException;
+use Daika7ana\Innoship\Exceptions\ValidationException;
+use Daika7ana\Innoship\Support\ApiResponseMapper;
+use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
+
+class ApiResponseMapperTest extends TestCase
+{
+    public function testDecodeJsonReturnsPayload(): void
+    {
+        $response = new Response(200, [], '{"courier":1,"success":true}');
+
+        $this->assertSame(['courier' => 1, 'success' => true], ApiResponseMapper::decodeJson($response));
+    }
+
+    public function testDecodeOptionalJsonReturnsEmptyArrayForEmptyBody(): void
+    {
+        $response = new Response(200, [], '');
+
+        $this->assertSame([], ApiResponseMapper::decodeOptionalJson($response));
+    }
+
+    public function testValidationErrorThrowsWithParsedErrors(): void
+    {
+        $response = new Response(400, [], json_encode([
+            'errors' => [
+                [
+                    'message' => 'Invalid order data',
+                    'details' => ['addressTo is required'],
+                    'categoryCode' => 'Validation',
+                    'subcategoryCode' => 'Order',
+                ],
+            ],
+            'correlationId' => 'corr-123',
+        ], JSON_THROW_ON_ERROR));
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected ValidationException.');
+        } catch (ValidationException $e) {
+            $this->assertSame('Invalid order data: addressTo is required', $e->getMessage());
+            $this->assertSame('corr-123', $e->correlationId);
+            $this->assertCount(1, $e->errors);
+            $this->assertSame('Invalid order data', $e->errors[0]->message);
+            $this->assertSame(['addressTo is required'], $e->errors[0]->details->all());
+            $this->assertSame('Order', $e->errors[0]->subcategoryCode);
+        }
+    }
+
+    public function testAspnetFieldErrorsAreFlattened(): void
+    {
+        $response = new Response(400, [], json_encode([
+            'errors' => [
+                'addressTo.name' => ['The Name field is required.'],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected ValidationException.');
+        } catch (ValidationException $e) {
+            $this->assertCount(1, $e->errors);
+            $this->assertSame('addressTo.name', $e->errors[0]->message);
+            $this->assertSame(['The Name field is required.'], $e->errors[0]->details->all());
+        }
+    }
+
+    public function testUnauthorizedThrowsAuthenticationException(): void
+    {
+        $response = new Response(401, [], '{"errors":[{"message":"Invalid API key"}]}');
+
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('Invalid API key');
+
+        ApiResponseMapper::decodeJson($response);
+    }
+
+    public function testUnexpectedStatusThrows(): void
+    {
+        $response = new Response(500, [], '{"errors":[{"message":"Server exploded"}]}');
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected UnexpectedStatusException.');
+        } catch (UnexpectedStatusException $e) {
+            $this->assertSame(500, $e->response->getStatusCode());
+            $this->assertSame('Server exploded', $e->getMessage());
+        }
+    }
+
+    public function testAcceptListOfExpectedStatuses(): void
+    {
+        $response = new Response(201, [], '{"success":true}');
+
+        $this->assertSame(['success' => true], ApiResponseMapper::decodeJson($response, [200, 201]));
+    }
+
+    public function testInvalidJsonThrowsUnexpectedStatus(): void
+    {
+        $this->expectException(UnexpectedStatusException::class);
+
+        ApiResponseMapper::decodeJson(new Response(200, [], 'not json'));
+    }
+}

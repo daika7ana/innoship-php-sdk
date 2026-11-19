@@ -1,0 +1,14 @@
+{
+  "clientOrderId": "-3__",
+  "externalOrderId": "sdk-live-validate-20261119133600",
+  "courier": -3,
+  "courierServiceName": "Innoship Standard",
+  "price": {
+    "amount": 33.0,
+    "vat": 6.93,
+    "totalAmount": 39.93,
+    "currency": "RON"
+  },
+  "calculatedDeliveryDate": "2026-11-19T22:00:00Z",
+  "extra": {}
+}

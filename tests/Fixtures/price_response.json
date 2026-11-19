@@ -1,0 +1,23 @@
+{
+  "rates": [
+    {
+      "carrierId": 2,
+      "carrier": "DPD",
+      "rateAmount": 8.4,
+      "rateVatAmount": 1.76,
+      "rateTotalAmount": 10.16,
+      "rateCurrency": "RON",
+      "score": 232.61,
+      "performance": 0.0,
+      "calculatedBusinessDays": 1,
+      "calculatedDeliveryDate": "2026-11-19T22:00:00Z",
+      "deliveryDays": 1,
+      "serviceId": 1,
+      "service": "Standard",
+      "optionId": "s1o1",
+      "optionName": "DPD Service 2505",
+      "priority": 30
+    }
+  ],
+  "correlationId": "499e5311459da8ef168787d3649e6b03"
+}
