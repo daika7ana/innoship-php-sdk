@@ -1,6 +1,6 @@
-# Innoship PHP SDK
-
 <div align="center">
+
+<h1>Innoship PHP SDK</h1>
 
 [![CI](https://github.com/daika7ana/innoship-php-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/daika7ana/innoship-php-sdk/actions/workflows/ci.yml)
 [![PHP 8.3+](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php)](https://www.php.net/)
@@ -12,7 +12,7 @@ A modern, type-safe PHP SDK for the **Innoship shipping API**
 
 </div>
 
-> Framework-agnostic, API-key powered, fully typed with DTOs, and production-ready.
+> 🚀 Framework-agnostic, API-key powered, fully typed with DTOs, production-ready, and built for multi-courier shipping.
 
 ## Table of Contents
 
@@ -29,13 +29,23 @@ A modern, type-safe PHP SDK for the **Innoship shipping API**
 
 ## Features
 
-- **API key authentication** — send `X-Api-Key` with every request, no OAuth dance
-- **PSR-18 HTTP client** — pluggable; the bundled Guzzle adapter is used by default
-- **Fully typed DTOs** — request payloads serialize from readonly objects; responses map back to typed objects
-- **Enums for every documented enum** — couriers, parcel types, payment types, label formats, incoterms, and more
-- **Complete API coverage** — orders, prices, labels, manifests, pickups, locations, notifications, offline orders, vouchers, repository
-- **Strict quality gates** — PHPStan level 8, Laravel Pint, PHPUnit
-- **Framework-agnostic** — works in Laravel, Symfony, or plain PHP
+### Core Strengths
+
+- ✅ **API key authentication** — send `X-Api-Key` with every request, no OAuth dance
+- ✅ **Explicit API versioning** — `api-version` travels as both a header and a query parameter
+- ✅ **PSR-18 HTTP client** — pluggable; the bundled Guzzle adapter is used by default
+- ✅ **Fully typed DTOs** — request payloads serialize from readonly objects; responses map back to typed objects
+- ✅ **Enums for every documented enum** — couriers, parcel types, payment types, label formats, incoterms, and more
+- ✅ **Complete API coverage** — orders, prices, labels, manifests, pickups, locations, notifications, offline orders, vouchers, repository
+- ✅ **Strict quality gates** — PHPStan level 8, Laravel Pint, PHPUnit
+- ✅ **Framework-agnostic** — works in Laravel, Symfony, or plain PHP
+
+### Perfect For
+
+- 🎯 Laravel, Symfony, or plain PHP applications
+- 🎯 Multi-courier shipping workflows — orders, carrier price rates, labels, and pickups through one client
+- 🎯 Teams that prefer typed request and response DTOs over raw arrays
+- 🎯 Projects that enforce strict static analysis and test gates
 
 ## Requirements
 
@@ -45,11 +55,15 @@ A modern, type-safe PHP SDK for the **Innoship shipping API**
 
 ## Installation
 
+### Via Composer
+
 ```bash
 composer require daika7ana/innoship-php-sdk
 ```
 
 ## Quick Start
+
+Creating an order takes a single request DTO:
 
 ```php
 use Daika7ana\Innoship\Client;
@@ -139,23 +153,11 @@ file_put_contents('label.pdf', $label->contents());
 `getLabel()` returns the same label as base64 JSON (`$label->contents`) when you
 need it inline rather than as a file.
 
+That's it! You've created an order, priced a shipment, and downloaded a label.
+
 ## Configuration
 
-### API key
-
-Pass the key explicitly or let the client read `INNOSHIP_API_KEY`:
-
-```php
-$client = Client::create(); // reads INNOSHIP_API_KEY
-
-$client = Client::create(config: new ClientConfig(apiKey: 'your-api-key'));
-
-$client = Client::create()->setApiKey('rotated-key');
-```
-
-Requests throw `AuthenticationException` when the key is empty.
-
-### Base URL & API version
+### Base URL & API Version
 
 The default base URL is `https://api.innoship.com`. Override it for a proxy or a
 test gateway:
@@ -174,7 +176,21 @@ $config = new ClientConfig(
 `apiVersion` is sent both as the `api-version` header and query parameter, as
 required by the API.
 
-### Request timeouts
+### Environment Variables
+
+Pass the key explicitly or let the client read `INNOSHIP_API_KEY`:
+
+```php
+$client = Client::create(); // reads INNOSHIP_API_KEY
+
+$client = Client::create(config: new ClientConfig(apiKey: 'your-api-key'));
+
+$client = Client::create()->setApiKey('rotated-key');
+```
+
+Requests throw `AuthenticationException` when the key is empty.
+
+### Request Timeouts
 
 `ClientConfig::timeout` is `null` by default. Precedence: the per-call argument → `ClientConfig::timeout` → the transport's own default (`GuzzleHttpClient` uses 30 s to respond and 10 s to connect unless you pass `timeout:`/`connectTimeout:`; an injected `GuzzleClient` keeps its own configuration). A bare PSR-18 client keeps its own timeout and cannot receive the per-call argument — passing one throws `InvalidArgumentException`; combining a bare client with a non-null `ClientConfig::timeout` also throws.
 
@@ -186,6 +202,8 @@ $client->request('GET', '/api/ClientLocation', null, [], 2.5);
 
 ## Authentication
 
+### X-Api-Key
+
 Innoship uses a single API key header:
 
 ```http
@@ -194,6 +212,9 @@ X-Api-Key: your-api-key
 
 The SDK adds it to every request. `401` responses and a missing key both raise
 `Daika7ana\Innoship\Exceptions\AuthenticationException`.
+
+`apiVersion` (default `1.0`) is sent alongside it as both the `api-version`
+header and a query parameter.
 
 ## Supported Resources
 
@@ -213,7 +234,7 @@ The SDK adds it to every request. `401` responses and a missing key both raise
 See [docs/RESOURCES.md](docs/RESOURCES.md) for the endpoint map, parameters, and
 examples.
 
-### Scope note
+### Scope Note
 
 The SDK covers the endpoints published in the official Innoship Swagger
 (`https://api.innoship.com/swagger/v1/swagger.json`). Innoship's support docs
@@ -223,7 +244,16 @@ are therefore not wrapped.
 
 ## Framework Support
 
-### Custom HTTP client
+### Zero Framework Dependencies
+
+The package carries no framework in `require` and works the same everywhere:
+
+- 🌐 **Laravel** applications
+- 🌐 **Symfony** projects
+- 🌐 **Plain PHP** applications
+- 🌐 Any **PHP 8.3+** environment
+
+### Custom HTTP Client
 
 The SDK uses its Guzzle adapter by default. To supply your own transport,
 implement `Daika7ana\Innoship\Http\HttpClientInterface`:
@@ -251,32 +281,53 @@ clients can honour per-request timeouts.
 
 ## Testing
 
+The suite is offline: tests run against a fake PSR-18 client and the JSON
+samples in [`tests/Fixtures/`](tests/Fixtures), and there is no live smoke suite.
+
+### Run Static Analysis
+
 ```bash
-composer ci        # validate -> pint -> stan -> test:unit
-composer stan      # PHPStan level 8
+composer stan      # PHPStan level 8 over src/
+```
+
+### Run Full Test Suite
+
+```bash
 composer test      # full PHPUnit suite
+# or
 composer test:unit # unit tests only
 ```
 
-The unit suite uses a fake PSR-18 client and never touches the network.
+### Run The Same Checks As CI
+
+```bash
+composer ci        # validate -> pint -> stan -> test:unit
+```
+
+### Test Environment Variables
+
+None. The unit suite reads no environment variables, and no smoke suite needs
+credentials.
 
 ## Documentation
 
 | Guide | Purpose |
 |-------|---------|
-| [Quickstart](docs/QUICKSTART.md) | First order, price, and label |
-| [Installation](docs/INSTALLATION.md) | Setup details |
-| [Configuration](docs/CONFIGURATION.md) | Base URL, API key, timeouts |
-| [Authentication](docs/AUTHENTICATION.md) | API key handling |
-| [Resources](docs/RESOURCES.md) | Complete endpoint reference |
-| [DTOs](docs/DTOS.md) | Request/response DTOs and enums |
-| [Testing](docs/TESTING.md) | Running the suite |
-| [Errors](docs/ERRORS.md) | Exception handling |
-| [All Docs](docs/USAGE.md) | Documentation index |
+| 📖 [Quickstart](docs/QUICKSTART.md) | First order, price, and label |
+| 🔧 [Installation](docs/INSTALLATION.md) | Setup details |
+| ⚙️ [Configuration](docs/CONFIGURATION.md) | Base URL, API key, timeouts |
+| 🔐 [Authentication](docs/AUTHENTICATION.md) | API key handling |
+| 🔗 [Resources](docs/RESOURCES.md) | Complete endpoint reference |
+| 📦 [DTOs](docs/DTOS.md) | Request/response DTOs and enums |
+| ✅ [Testing](docs/TESTING.md) | Running the suite |
+| ❌ [Errors](docs/ERRORS.md) | Exception handling |
+| 📚 [All Docs](docs/USAGE.md) | Documentation index |
 
 ---
 
 <div align="center">
+
+Made with ❤️
 
 **Questions?** [Check the docs](docs/USAGE.md) or [open an issue](../../issues)
 
