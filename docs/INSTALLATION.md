@@ -6,10 +6,9 @@
 - `ext-json`
 - Composer 2
 
-The SDK declares PSR-7/17/18 interfaces and ships a Guzzle adapter. To use a
-different transport, implement `Daika7ana\Innoship\Http\HttpClientInterface`; a
-plain PSR-18 client needs a small adapter because that interface adds the
-optional `?float $timeout` argument.
+The SDK declares PSR-7/17/18 interfaces and ships a Guzzle adapter used by
+default. Any PSR-18 client can be passed to `Client::create()`; the SDK wraps
+it in its internal transport contract.
 
 ## Install
 

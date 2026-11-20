@@ -3,7 +3,7 @@
 ## Commands
 
 ```bash
-composer ci        # pint --test -> phpstan -> phpunit tests/Unit
+composer ci        # validate --strict -> pint --test -> phpstan -> phpunit tests/Unit
 composer pint      # style check only
 composer stan      # PHPStan level 8 over src/
 composer test      # full suite
@@ -41,6 +41,6 @@ $this->assertSame('/api/Order', $httpClient->lastRequest?->getUri()->getPath());
 
 ## CI
 
-`.github/workflows/ci.yml` runs Pint and PHPStan on PHP 8.3 and PHPUnit on PHP
-8.3, 8.4, and 8.5. All jobs use `composer ci` scripts, so local and CI checks
-are identical.
+`.github/workflows/ci.yml` runs the same commands as `composer ci`, split into
+separate steps: `composer validate --strict`, Pint and PHPStan on PHP 8.3, and
+PHPUnit on 8.3, 8.4, and 8.5.

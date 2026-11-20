@@ -270,6 +270,20 @@ class OrdersResourceTest extends TestCase
         $this->assertStringContainsString('userAllowedLocationIds=2', $query);
     }
 
+    public function testImportFileStripsFilenameHeaderInjection(): void
+    {
+        [$client, $httpClient] = TestClientFactory::create(
+            static fn() => ResponseFixtureFactory::json(['accepted' => 0], 201),
+        );
+
+        $client->orders()->importFile('awb', "a\"b\r\nX-Injected: 1.csv");
+
+        $body = (string) $httpClient->lastRequest?->getBody();
+
+        $this->assertStringContainsString('filename="abX-Injected: 1.csv"', $body);
+        $this->assertStringNotContainsString("\r\nX-Injected:", $body);
+    }
+
     public function testSimulatePostsOrderAndMapsResponse(): void
     {
         [$client, $httpClient] = TestClientFactory::create(

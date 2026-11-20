@@ -10,6 +10,7 @@ use Daika7ana\Innoship\Exceptions\AuthenticationException;
 use Daika7ana\Innoship\Exceptions\TransportException;
 use Daika7ana\Innoship\Http\GuzzleHttpClient;
 use Daika7ana\Innoship\Http\HttpClientInterface;
+use Daika7ana\Innoship\Http\Psr18HttpClientAdapter;
 use Daika7ana\Innoship\Resources\CouriersResource;
 use Daika7ana\Innoship\Resources\LabelsResource;
 use Daika7ana\Innoship\Resources\LocationsResource;
@@ -22,6 +23,7 @@ use Daika7ana\Innoship\Resources\RepositoryResource;
 use Daika7ana\Innoship\Resources\VouchersResource;
 use Daika7ana\Innoship\Support\JsonHelper;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -29,6 +31,8 @@ use Psr\Http\Message\StreamFactoryInterface;
 
 class Client
 {
+    private HttpClientInterface $httpClient;
+
     private ClientConfig $config;
 
     private ?OrdersResource $ordersResource = null;
@@ -52,11 +56,18 @@ class Client
     private ?RepositoryResource $repositoryResource = null;
 
     public function __construct(
-        private HttpClientInterface $httpClient,
+        ClientInterface $httpClient,
         private RequestFactoryInterface $requestFactory,
         private StreamFactoryInterface $streamFactory,
         ?ClientConfig $config = null,
     ) {
+        if ($config !== null && $config->timeout !== null && !$httpClient instanceof HttpClientInterface) {
+            throw new \InvalidArgumentException('ClientConfig::timeout cannot be applied to a foreign PSR-18 client; configure the timeout on that client or leave it null.');
+        }
+
+        $this->httpClient = $httpClient instanceof HttpClientInterface
+            ? $httpClient
+            : new Psr18HttpClientAdapter($httpClient);
         $this->config = $config ?? ClientConfig::fromEnvironment();
     }
 
@@ -212,7 +223,7 @@ class Client
     }
 
     public static function create(
-        ?HttpClientInterface $httpClient = null,
+        ?ClientInterface $httpClient = null,
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
         ?ClientConfig $config = null,

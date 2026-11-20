@@ -9,7 +9,7 @@ properties. `withApiKey()` returns a modified copy.
 | `apiKey` | `''` | Value of `X-Api-Key` |
 | `apiVersion` | `1.0` | Sent as `api-version` header and query parameter |
 | `acceptLanguage` | `en` | `Accept-Language` header |
-| `timeout` | `30.0` | Default request timeout in seconds |
+| `timeout` | `null` | Request timeout in seconds; `null` uses the transport default |
 
 ## Construct a client
 
@@ -21,7 +21,6 @@ $client = Client::create(config: new ClientConfig(
     baseUrl: 'https://api.innoship.com',
     apiKey: 'your-api-key',
     apiVersion: '1.0',
-    timeout: 30.0,
 ));
 ```
 
@@ -46,12 +45,18 @@ $client->setApiKey('rotated-key');
 
 ## Timeouts
 
-`timeout` defaults to 30 seconds and applies to every request made by the
-client; the connection phase is capped at 10 seconds. Override it per call:
+`timeout` is `null` by default, so the bundled `GuzzleHttpClient` applies its
+own 30 s request / 10 s connect defaults. Precedence: the per-call argument →
+`ClientConfig::timeout` → the transport's own default. Set another default with
+`new ClientConfig(timeout: 10.0)` or override per call:
 
 ```php
 $client->request('POST', '/api/Order', new \Daika7ana\Innoship\DTOs\Orders\OrderRequest(), [], 5.0);
 ```
+
+`timeout` applies to the bundled transport. A foreign PSR-18 client keeps its
+own timeout; passing both it and a non-null `ClientConfig::timeout` throws
+`InvalidArgumentException`.
 
 ## Custom HTTP client
 
@@ -62,5 +67,10 @@ use Daika7ana\Innoship\Http\HttpClientInterface;
 /** @var HttpClientInterface $httpClient */
 $client = Client::create(httpClient: $httpClient);
 ```
+
+A bare PSR-18 client is wrapped automatically; it keeps its own timeout (see
+above), and passing it together with a non-null `ClientConfig::timeout` throws.
+Passing PSR-17 `requestFactory:` and `streamFactory:` to `Client::create()` is
+optional; the bundled factories are used otherwise.
 
 `HttpClientInterface::sendRequest()` receives the optional timeout argument.

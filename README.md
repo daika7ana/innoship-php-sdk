@@ -30,7 +30,7 @@ A modern, type-safe PHP SDK for the **Innoship shipping API**
 ## Features
 
 - **API key authentication** — send `X-Api-Key` with every request, no OAuth dance
-- **PSR-18 HTTP client** — pluggable, with a Guzzle adapter by default
+- **PSR-18 HTTP client** — pluggable; the bundled Guzzle adapter is used by default
 - **Fully typed DTOs** — request payloads serialize from readonly objects; responses map back to typed objects
 - **Enums for every documented enum** — couriers, parcel types, payment types, label formats, incoterms, and more
 - **Complete API coverage** — orders, prices, labels, manifests, pickups, locations, notifications, offline orders, vouchers, repository
@@ -168,7 +168,6 @@ $config = new ClientConfig(
     apiKey: 'your-api-key',
     apiVersion: '1.0',
     acceptLanguage: 'en',
-    timeout: 30.0,
 );
 ```
 
@@ -177,8 +176,9 @@ required by the API.
 
 ### Request timeouts
 
-The default is 30 seconds. Set another default with `ClientConfig(timeout: ...)`
-or override per call:
+`ClientConfig::timeout` is `null` by default. Precedence: the per-call argument → `ClientConfig::timeout` → the transport's own default (`GuzzleHttpClient` uses 30 s to respond and 10 s to connect unless you pass `timeout:`/`connectTimeout:`; an injected `GuzzleClient` keeps its own configuration). A bare PSR-18 client keeps its own timeout and cannot receive the per-call argument — passing one throws `InvalidArgumentException`; combining a bare client with a non-null `ClientConfig::timeout` also throws.
+
+Set a different SDK default with `ClientConfig(timeout: ...)` or override per call:
 
 ```php
 $client->request('GET', '/api/ClientLocation', null, [], 2.5);
@@ -225,8 +225,8 @@ are therefore not wrapped.
 
 ### Custom HTTP client
 
-The SDK ships a Guzzle adapter and uses it by default. To supply your own
-transport, implement `Daika7ana\Innoship\Http\HttpClientInterface`:
+The SDK uses its Guzzle adapter by default. To supply your own transport,
+implement `Daika7ana\Innoship\Http\HttpClientInterface`:
 
 ```php
 use Daika7ana\Innoship\Client;
@@ -236,8 +236,15 @@ use Daika7ana\Innoship\Http\HttpClientInterface;
 $client = Client::create(httpClient: $customClient);
 ```
 
-A plain PSR-18 client must be wrapped in an `HttpClientInterface` adapter,
-because that interface adds the optional `?float $timeout` argument.
+A plain PSR-18 client is wrapped automatically, so
+`Client::create(httpClient: $psr18Client)` works. Such a client keeps its own
+timeout: leaving `ClientConfig::timeout` at `null` is required, otherwise the
+constructor throws `InvalidArgumentException`. Passing it together with a
+non-null `ClientConfig::timeout` throws as well. Implement `HttpClientInterface`
+instead if you need the SDK's per-request timeout.
+
+Both forms use the bundled PSR-17 factories by default; you may also pass
+`requestFactory:` and `streamFactory:` explicitly to override them.
 
 `HttpClientInterface::sendRequest()` accepts an optional timeout, so custom
 clients can honour per-request timeouts.
@@ -245,7 +252,7 @@ clients can honour per-request timeouts.
 ## Testing
 
 ```bash
-composer ci        # pint -> stan -> test:unit
+composer ci        # validate -> pint -> stan -> test:unit
 composer stan      # PHPStan level 8
 composer test      # full PHPUnit suite
 composer test:unit # unit tests only

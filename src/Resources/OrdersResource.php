@@ -24,7 +24,6 @@ use Daika7ana\Innoship\Exceptions\UnexpectedStatusException;
 use Daika7ana\Innoship\Exceptions\ValidationException;
 use Daika7ana\Innoship\Support\ApiResponseMapper;
 use Daika7ana\SimpleCollections\Collection;
-use GuzzleHttp\Psr7\MultipartStream;
 
 class OrdersResource
 {
@@ -132,9 +131,13 @@ class OrdersResource
      */
     public function importFile(string $fileContents, string $filename = 'orders.csv', array $userAllowedLocationIds = []): array
     {
-        $multipart = new MultipartStream([
-            ['name' => 'file', 'contents' => $fileContents, 'filename' => $filename],
-        ]);
+        $boundary = bin2hex(random_bytes(16));
+        $body = sprintf(
+            "--%1\$s\r\nContent-Disposition: form-data; name=\"file\"; filename=\"%2\$s\"\r\nContent-Type: text/csv\r\n\r\n%3\$s\r\n--%1\$s--\r\n",
+            $boundary,
+            str_replace(["\r", "\n", '"', '\\'], '', $filename),
+            $fileContents,
+        );
 
         $path = '/api/Order/file';
         $query = [];
@@ -148,8 +151,8 @@ class OrdersResource
         }
 
         $request = $this->client->createRequest('POST', $path)
-            ->withHeader('Content-Type', 'multipart/form-data; boundary=' . $multipart->getBoundary())
-            ->withBody($this->client->streamFactory()->createStream((string) $multipart));
+            ->withHeader('Content-Type', 'multipart/form-data; boundary=' . $boundary)
+            ->withBody($this->client->streamFactory()->createStream($body));
 
         $response = $this->client->send($request);
 

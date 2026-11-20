@@ -35,6 +35,19 @@ class GuzzleHttpClientTest extends TestCase
         return new GuzzleHttpClient(new GuzzleClient(['handler' => $stack]));
     }
 
+    public function testDefaultConstructorAppliesDocumentedTimeoutDefaults(): void
+    {
+        $client = new GuzzleHttpClient();
+
+        $property = new \ReflectionProperty(GuzzleHttpClient::class, 'guzzleClient');
+        $config = $property->getValue($client)->getConfig();
+
+        $this->assertSame(GuzzleHttpClient::DEFAULT_TIMEOUT, $config['timeout']);
+        $this->assertSame(GuzzleHttpClient::DEFAULT_CONNECT_TIMEOUT, $config['connect_timeout']);
+        $this->assertSame(30.0, $config['timeout']);
+        $this->assertSame(10.0, $config['connect_timeout']);
+    }
+
     public function testSendRequestForwardsTimeoutAndFlags(): void
     {
         $captured = null;
@@ -44,9 +57,33 @@ class GuzzleHttpClientTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame(5.0, $captured['timeout']);
-        $this->assertSame(5.0, $captured['connect_timeout']);
+        $this->assertArrayNotHasKey('connect_timeout', $captured);
         $this->assertFalse($captured['http_errors']);
         $this->assertFalse($captured['allow_redirects']);
+    }
+
+    public function testConstructorConnectTimeoutIsForwarded(): void
+    {
+        $captured = null;
+        $stack = HandlerStack::create(new MockHandler([new Response(200)]));
+        $stack->push(static function (callable $handler) use (&$captured): callable {
+            return static function ($request, array $options) use (&$captured, $handler) {
+                $captured = $options;
+
+                return $handler($request, $options);
+            };
+        });
+
+        $client = new GuzzleHttpClient(
+            guzzleClient: new GuzzleClient(['handler' => $stack]),
+            connectTimeout: 3.0,
+        );
+
+        $client->sendRequest(new Request('GET', 'https://example.test/foo'));
+
+        $this->assertIsArray($captured);
+        $this->assertArrayNotHasKey('timeout', $captured);
+        $this->assertSame(3.0, $captured['connect_timeout']);
     }
 
     public function testSendRequestWithoutTimeoutOmitsTimeoutOption(): void
