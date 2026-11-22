@@ -81,6 +81,7 @@ class OrdersResource
             throw new UnexpectedStatusException(
                 $response,
                 'Expected a boolean validation result.',
+                retryAfter: ApiResponseMapper::retryAfter($response),
             );
         }
 

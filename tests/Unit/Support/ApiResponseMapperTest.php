@@ -54,6 +54,19 @@ class ApiResponseMapperTest extends TestCase
         }
     }
 
+    public function testValidationExceptionExposesTheResponse(): void
+    {
+        $response = new Response(422, [], '{"errors":[{"message":"Invalid order data"}]}');
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected ValidationException.');
+        } catch (ValidationException $e) {
+            $this->assertSame($response, $e->response);
+            $this->assertSame(422, $e->response?->getStatusCode());
+        }
+    }
+
     public function testAspnetFieldErrorsAreFlattened(): void
     {
         $response = new Response(400, [], json_encode([
@@ -107,5 +120,22 @@ class ApiResponseMapperTest extends TestCase
         $this->expectException(UnexpectedStatusException::class);
 
         ApiResponseMapper::decodeJson(new Response(200, [], 'not json'));
+    }
+
+    public function testUnexpectedStatusExposesRetryAfterHeader(): void
+    {
+        try {
+            ApiResponseMapper::decodeJson(new Response(503, ['Retry-After' => '30'], 'down'));
+            $this->fail('Expected UnexpectedStatusException.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame(30, $exception->retryAfter);
+        }
+
+        try {
+            ApiResponseMapper::decodeJson(new Response(503, [], 'down'));
+            $this->fail('Expected UnexpectedStatusException.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertNull($exception->retryAfter);
+        }
     }
 }

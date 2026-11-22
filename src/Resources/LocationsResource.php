@@ -86,7 +86,11 @@ class LocationsResource
             return (int) $value['id'];
         }
 
-        throw new UnexpectedStatusException($response, 'Expected a client location id.');
+        throw new UnexpectedStatusException(
+            $response,
+            'Expected a client location id.',
+            retryAfter: ApiResponseMapper::retryAfter($response),
+        );
     }
 
     /**

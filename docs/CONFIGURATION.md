@@ -58,6 +58,12 @@ $client->request('POST', '/api/Order', new \Daika7ana\Innoship\DTOs\Orders\Order
 own timeout; passing both it and a non-null `ClientConfig::timeout` throws
 `InvalidArgumentException`.
 
+When some calls need a different budget than the rest, derive a client:
+`$other = $client->withTimeout(30.0);` returns a new client sharing the
+transport and the PSR-17 factories, so no new transport is built and the API
+key is carried over; the original client keeps its timeout. `withTimeout(null)`
+returns to the transport default.
+
 ## Custom HTTP client
 
 ```php

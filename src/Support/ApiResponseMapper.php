@@ -32,6 +32,7 @@ final class ApiResponseMapper
             throw new UnexpectedStatusException(
                 $response,
                 'Response body is not valid JSON: ' . $e->getMessage(),
+                retryAfter: self::retryAfter($response),
             );
         }
     }
@@ -62,6 +63,7 @@ final class ApiResponseMapper
             throw new UnexpectedStatusException(
                 $response,
                 'Response body is not valid JSON: ' . $e->getMessage(),
+                retryAfter: self::retryAfter($response),
             );
         }
     }
@@ -85,6 +87,7 @@ final class ApiResponseMapper
             throw new UnexpectedStatusException(
                 $response,
                 'Response body is not valid JSON: ' . $e->getMessage(),
+                retryAfter: self::retryAfter($response),
             );
         }
     }
@@ -155,14 +158,21 @@ final class ApiResponseMapper
         [$message, $errors, $correlationId] = self::decodeErrorPayload((string) $response->getBody());
 
         if ($statusCode === 401) {
-            throw new AuthenticationException($message !== '' ? $message : 'Unauthorized');
+            throw new AuthenticationException($message !== '' ? $message : 'Unauthorized', response: $response, retryAfter: self::retryAfter($response));
         }
 
         if ($statusCode === 400 || $statusCode === 422) {
-            throw new ValidationException($errors, $message, $correlationId);
+            throw new ValidationException($errors, $message, $correlationId, response: $response, retryAfter: self::retryAfter($response));
         }
 
-        throw new UnexpectedStatusException($response, $message);
+        throw new UnexpectedStatusException($response, $message, retryAfter: self::retryAfter($response));
+    }
+
+    public static function retryAfter(ResponseInterface $response): ?int
+    {
+        $value = trim($response->getHeaderLine('Retry-After'));
+
+        return ctype_digit($value) ? (int) $value : null;
     }
 
     /**

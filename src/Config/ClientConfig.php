@@ -27,6 +27,14 @@ final class ClientConfig
         return $config;
     }
 
+    public function withTimeout(?float $timeout): self
+    {
+        $config = clone $this;
+        $config->timeout = $timeout;
+
+        return $config;
+    }
+
     public static function fromEnvironment(): self
     {
         return new self(apiKey: (string) (getenv('INNOSHIP_API_KEY') ?: ''));

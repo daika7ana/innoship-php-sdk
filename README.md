@@ -200,6 +200,9 @@ Set a different SDK default with `ClientConfig(timeout: ...)` or override per ca
 $client->request('GET', '/api/ClientLocation', null, [], 2.5);
 ```
 
+For a different budget, `$slow = $client->withTimeout(30.0);` returns a new
+client sharing the transport; the original keeps its timeout.
+
 ## Authentication
 
 ### X-Api-Key

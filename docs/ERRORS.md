@@ -11,6 +11,13 @@ All exceptions extend `Daika7ana\Innoship\Exceptions\InnoshipException`.
 
 `TransportException` implements PSR-18 `ClientExceptionInterface`.
 
+`AuthenticationException` and `ValidationException` thrown from an HTTP
+response expose the raw PSR-7 response on `$e->response` (null when the
+exception is raised before a response exists). `UnexpectedStatusException`
+always has one. Exceptions that carry a response also expose the numeric
+`Retry-After` value in seconds on `$e->retryAfter` (`null` when absent,
+non-numeric, or an HTTP date).
+
 ## Validation errors
 
 Innoship returns:
@@ -43,6 +50,8 @@ try {
     $e->getMessage();       // "Invalid order data: addressTo is required"
     $e->correlationId;      // "corr-123"
     $e->errors;             // list<ErrorResponseItem>
+    $e->response;           // raw PSR-7 ResponseInterface (nullable)
+    $e->retryAfter;         // int|null, from the Retry-After header
 
     foreach ($e->errors as $error) {
         $error->message;

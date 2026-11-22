@@ -76,6 +76,24 @@ class Client
         return $this->config;
     }
 
+    /**
+     * A client sharing this client's transport and PSR-17 factories, but with
+     * a different request timeout budget.
+     */
+    public function withTimeout(?float $timeout): self
+    {
+        if ($timeout !== null && $this->httpClient instanceof Psr18HttpClientAdapter) {
+            throw new \InvalidArgumentException('ClientConfig::timeout cannot be applied to a foreign PSR-18 client; configure the timeout on that client or leave it null.');
+        }
+
+        return new self(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->streamFactory,
+            $this->config->withTimeout($timeout),
+        );
+    }
+
     public function setApiKey(string $apiKey): self
     {
         $this->config = $this->config->withApiKey($apiKey);
