@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Daika7ana\Innoship\Support;
 
 use Daika7ana\Innoship\DTOs\Common\ErrorResponseItem;
+use Daika7ana\Innoship\DTOs\Common\Errors\InnoshipError;
 use Daika7ana\Innoship\Exceptions\AuthenticationException;
 use Daika7ana\Innoship\Exceptions\UnexpectedStatusException;
 use Daika7ana\Innoship\Exceptions\ValidationException;
@@ -33,6 +34,7 @@ final class ApiResponseMapper
                 $response,
                 'Response body is not valid JSON: ' . $e->getMessage(),
                 retryAfter: self::retryAfter($response),
+                error: self::errorFromResponse($response),
             );
         }
     }
@@ -64,6 +66,7 @@ final class ApiResponseMapper
                 $response,
                 'Response body is not valid JSON: ' . $e->getMessage(),
                 retryAfter: self::retryAfter($response),
+                error: self::errorFromResponse($response),
             );
         }
     }
@@ -88,6 +91,7 @@ final class ApiResponseMapper
                 $response,
                 'Response body is not valid JSON: ' . $e->getMessage(),
                 retryAfter: self::retryAfter($response),
+                error: self::errorFromResponse($response),
             );
         }
     }
@@ -157,15 +161,29 @@ final class ApiResponseMapper
 
         [$message, $errors, $correlationId] = self::decodeErrorPayload((string) $response->getBody());
 
+        $error = self::errorFromResponse($response);
+
+        // Status alone selects the class; the $error predicates are consumer hints.
         if ($statusCode === 401) {
-            throw new AuthenticationException($message !== '' ? $message : 'Unauthorized', response: $response, retryAfter: self::retryAfter($response));
+            throw new AuthenticationException($message !== '' ? $message : 'Unauthorized', response: $response, retryAfter: self::retryAfter($response), error: $error);
         }
 
         if ($statusCode === 400 || $statusCode === 422) {
-            throw new ValidationException($errors, $message, $correlationId, response: $response, retryAfter: self::retryAfter($response));
+            throw new ValidationException(response: $response, message: $message, retryAfter: self::retryAfter($response), error: $error, correlationId: $correlationId, errors: $errors);
         }
 
-        throw new UnexpectedStatusException($response, $message, retryAfter: self::retryAfter($response));
+        throw new UnexpectedStatusException($response, $message, retryAfter: self::retryAfter($response), error: $error);
+    }
+
+    public static function errorFromResponse(ResponseInterface $response): InnoshipError
+    {
+        try {
+            $data = JsonHelper::decode((string) $response->getBody());
+        } catch (\Throwable) {
+            $data = [];
+        }
+
+        return InnoshipError::fromArray($data, $response->getStatusCode());
     }
 
     public static function retryAfter(ResponseInterface $response): ?int

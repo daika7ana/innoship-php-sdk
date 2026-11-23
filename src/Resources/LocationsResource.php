@@ -90,6 +90,7 @@ class LocationsResource
             $response,
             'Expected a client location id.',
             retryAfter: ApiResponseMapper::retryAfter($response),
+            error: ApiResponseMapper::errorFromResponse($response),
         );
     }
 

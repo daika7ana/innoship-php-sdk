@@ -47,9 +47,14 @@ class OrdersResourceTest extends TestCase
             static fn() => ResponseFixtureFactory::json(['isValid' => true], 200),
         );
 
-        $this->expectException(UnexpectedStatusException::class);
-
-        $client->orders()->validate(new OrderRequest());
+        try {
+            $client->orders()->validate(new OrderRequest());
+            $this->fail('Expected UnexpectedStatusException.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame(200, $exception->getCode());
+            $this->assertNotNull($exception->error);
+            $this->assertSame(200, $exception->error->code);
+        }
     }
 
     public function testSimulateMultipleAccepts200AndMapsResults(): void

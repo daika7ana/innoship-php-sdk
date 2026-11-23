@@ -64,6 +64,7 @@ class ApiResponseMapperTest extends TestCase
         } catch (ValidationException $e) {
             $this->assertSame($response, $e->response);
             $this->assertSame(422, $e->response?->getStatusCode());
+            $this->assertSame(422, $e->getCode());
         }
     }
 
@@ -104,6 +105,7 @@ class ApiResponseMapperTest extends TestCase
             $this->fail('Expected UnexpectedStatusException.');
         } catch (UnexpectedStatusException $e) {
             $this->assertSame(500, $e->response->getStatusCode());
+            $this->assertSame(500, $e->getCode());
             $this->assertSame('Server exploded', $e->getMessage());
         }
     }
@@ -120,6 +122,60 @@ class ApiResponseMapperTest extends TestCase
         $this->expectException(UnexpectedStatusException::class);
 
         ApiResponseMapper::decodeJson(new Response(200, [], 'not json'));
+    }
+
+    public function testValidationExceptionCarriesParsedError(): void
+    {
+        $response = new Response(422, [], json_encode([
+            'errors' => [
+                ['message' => 'Invalid order data', 'categoryCode' => 'Validation', 'subcategoryCode' => 'Order'],
+            ],
+            'correlationId' => 'corr-123',
+        ], JSON_THROW_ON_ERROR));
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected ValidationException.');
+        } catch (ValidationException $e) {
+            $this->assertNotNull($e->error);
+            $this->assertSame(422, $e->error->code);
+            $this->assertSame('Invalid order data', $e->error->message);
+            $this->assertSame('corr-123', $e->error->id);
+            $this->assertSame('Validation', $e->error->context);
+            $this->assertSame('Order', $e->error->component);
+            $this->assertTrue($e->error->isValidationRelated());
+        }
+    }
+
+    public function testAuthenticationExceptionCarriesParsedError(): void
+    {
+        $response = new Response(401, [], '{"errors":[{"message":"Invalid API key"}]}');
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected AuthenticationException.');
+        } catch (AuthenticationException $e) {
+            $this->assertNotNull($e->error);
+            $this->assertSame(401, $e->getCode());
+            $this->assertSame(401, $e->error->code);
+            $this->assertSame('Invalid API key', $e->error->message);
+            $this->assertTrue($e->error->isAuthenticationRelated());
+        }
+    }
+
+    public function testUnexpectedStatusCarriesParsedError(): void
+    {
+        $response = new Response(500, [], '{"errors":[{"message":"Server exploded"}],"correlationId":"corr-500"}');
+
+        try {
+            ApiResponseMapper::decodeJson($response);
+            $this->fail('Expected UnexpectedStatusException.');
+        } catch (UnexpectedStatusException $e) {
+            $this->assertNotNull($e->error);
+            $this->assertSame(500, $e->error->code);
+            $this->assertSame('Server exploded', $e->error->message);
+            $this->assertSame('corr-500', $e->error->id);
+        }
     }
 
     public function testUnexpectedStatusExposesRetryAfterHeader(): void

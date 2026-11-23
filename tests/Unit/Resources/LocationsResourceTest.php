@@ -8,6 +8,7 @@ use Daika7ana\Innoship\DTOs\Locations\LocationAddress;
 use Daika7ana\Innoship\DTOs\Locations\LocationFilter;
 use Daika7ana\Innoship\DTOs\Locations\UpdateLocation;
 use Daika7ana\Innoship\DTOs\Locations\UpdateLocationCourierService;
+use Daika7ana\Innoship\Exceptions\UnexpectedStatusException;
 use Daika7ana\Innoship\Tests\Support\ResponseFixtureFactory;
 use Daika7ana\Innoship\Tests\Support\TestClientFactory;
 use PHPUnit\Framework\TestCase;
@@ -77,6 +78,22 @@ class LocationsResourceTest extends TestCase
             ['PUT', '/api/ClientLocation/9'],
             ['DELETE', '/api/ClientLocation/9'],
         ], $methods);
+    }
+
+    public function testCreateThrowsUnexpectedStatusWithParsedError(): void
+    {
+        [$client] = TestClientFactory::create(
+            static fn() => ResponseFixtureFactory::json(['message' => 'Unexpected location id'], 200),
+        );
+
+        try {
+            $client->locations()->create(new UpdateLocation(name: 'HQ'));
+            $this->fail('Expected UnexpectedStatusException.');
+        } catch (UnexpectedStatusException $exception) {
+            $this->assertSame(200, $exception->getCode());
+            $this->assertNotNull($exception->error);
+            $this->assertSame('Unexpected location id', $exception->error->message);
+        }
     }
 
     public function testSummaryAndValidateSendBody(): void

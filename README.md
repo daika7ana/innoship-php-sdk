@@ -284,33 +284,35 @@ clients can honour per-request timeouts.
 
 ## Testing
 
-The suite is offline: tests run against a fake PSR-18 client and the JSON
-samples in [`tests/Fixtures/`](tests/Fixtures), and there is no live smoke suite.
+The unit suite is offline: tests run against a fake PSR-18 client and the JSON
+samples in [`tests/Fixtures/`](tests/Fixtures). The optional smoke suite in
+[`tests/Smoke/`](tests/Smoke) calls the live API.
 
 ### Run Static Analysis
 
 ```bash
-composer stan      # PHPStan level 8 over src/
+composer stan       # PHPStan level 8 over src/
 ```
 
-### Run Full Test Suite
+### Run Tests
 
 ```bash
-composer test      # full PHPUnit suite
-# or
-composer test:unit # unit tests only
+composer test       # full PHPUnit suite (smoke tests skip without a key)
+composer test:unit  # unit tests only
+composer test:smoke # live smoke suite; requires INNOSHIP_API_KEY
 ```
 
 ### Run The Same Checks As CI
 
 ```bash
-composer ci        # validate -> pint -> stan -> test:unit
+composer ci         # validate -> pint -> stan -> test:unit
 ```
 
 ### Test Environment Variables
 
-None. The unit suite reads no environment variables, and no smoke suite needs
-credentials.
+The unit suite reads none. `composer test:smoke` needs `INNOSHIP_API_KEY`;
+without it the smoke tests skip and the run still passes. Smoke tests are not
+part of `composer ci`.
 
 ## Documentation
 

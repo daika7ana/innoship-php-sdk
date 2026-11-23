@@ -21,6 +21,7 @@ composer pint       # style check only, never fixes
 composer stan       # PHPStan level 8 over src/
 composer test       # full PHPUnit suite
 composer test:unit  # tests/Unit only
+composer test:smoke # tests/Smoke only; skips unless INNOSHIP_API_KEY is set
 vendor/bin/pint     # the only way to auto-fix style
 ```
 
@@ -35,8 +36,8 @@ vendor/bin/pint     # the only way to auto-fix style
 
 `src/` holds `Client.php`, `Config/`, `Contracts/`, `Http/`, `Support/`,
 `Exceptions/`, `Enums/`, `DTOs/<Area>/` and `Resources/`. `tests/Support/` holds
-the fakes, `tests/Unit/` mirrors `src/`, `tests/Fixtures/` the raw JSON;
-`docs/` holds the user guides.
+the fakes, `tests/Unit/` mirrors `src/`, `tests/Fixtures/` the raw JSON,
+`tests/Smoke/` the live self-skipping checks; `docs/` holds the user guides.
 
 ## Conventions
 
@@ -107,6 +108,15 @@ the fakes, `tests/Unit/` mirrors `src/`, `tests/Fixtures/` the raw JSON;
 - Unit tests never touch the network. `TestClientFactory::create($handler)`
   returns `[Client, FakeHttpClient]`; `ResponseFixtureFactory` has canned payloads
   and `tests/Fixtures/` holds raw JSON samples.
+- `tests/Smoke/` holds live checks that skip unless `INNOSHIP_API_KEY` is set;
+  run them with `composer test:smoke`. They are not part of `composer ci`.
+- Read-only smoke covers locations, prices, labels, courier locations and
+  notification history. `INNOSHIP_SMOKE_AWB`, `INNOSHIP_SMOKE_COURIER_ID`,
+  `INNOSHIP_SMOKE_LOCATION_ID` and `INNOSHIP_SMOKE_SERVICE_ID` supply
+  account-specific values; tests that need one skip without it.
+- The order create/delete smoke test runs only with
+  `INNOSHIP_SMOKE_ENABLE_WRITES=true`. It deletes the order in a `finally`
+  block and fails when the delete fails, so a run leaves no order behind.
 - Assert method, path, query, body and headers on `$httpClient->lastRequest`;
   every new endpoint needs a test covering both request and response mapping.
 - `composer ci` must pass before a change is done.

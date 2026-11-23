@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-23
+
+### Added
+
+- Live smoke coverage for prices, labels, courier locations and notification history, plus an opt-in (`INNOSHIP_SMOKE_ENABLE_WRITES=true`) order simulate/create/delete workflow that fails when cleanup fails.
+
+- `InnoshipError` DTO (`code`, `message`, `id`, `raw`, `context`, `component`) exposing the parsed API error payload on `AuthenticationException`, `ValidationException` and `UnexpectedStatusException` as `$exception->error`.
+- `test:smoke` composer script and self-skipping `tests/Smoke` suite; tests skip unless `INNOSHIP_API_KEY` is set.
+
+### Changed
+
+- **Breaking:** `ValidationException` constructor reordered to the sibling shape: `response`, `message`, `code`, `retryAfter`, `error`, `correlationId`, with `errors` and `previous` last.
+- `getCode()` returns the HTTP status when a response is present, otherwise `0`; carrier codes stay on `$error->code`.
+- `UnexpectedStatusException` from `OrdersResource::validate()` and `LocationsResource::create()` now carries the parsed `$error`.
+- **Breaking:** `UnexpectedStatusException::$response` is nullable and defaults to `null`; the default message is `Unexpected HTTP status` when no response is in scope.
+
+### Removed
+
+- Empty `src/Auth/` and `tests/Unit/Auth/` directories.
+
+### Fixed
+
+- README and Testing docs no longer claim there is no live smoke suite; both describe `composer test:smoke` and the `INNOSHIP_API_KEY` skip.
+
 ## [1.2.0] - 2026-11-22
 
 ### Added

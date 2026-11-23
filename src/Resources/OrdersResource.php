@@ -82,6 +82,7 @@ class OrdersResource
                 $response,
                 'Expected a boolean validation result.',
                 retryAfter: ApiResponseMapper::retryAfter($response),
+                error: ApiResponseMapper::errorFromResponse($response),
             );
         }
 
