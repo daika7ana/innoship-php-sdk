@@ -31,6 +31,9 @@ non-numeric, or an HTTP date).
 All three HTTP exceptions expose the parsed error payload on `$e->error` (an
 `InnoshipError`) when the failure came from an API error response.
 
+`$e->getCode()` is the HTTP status when a response is present, otherwise `0`;
+carrier error codes stay on `$e->error->code`.
+
 ## Validation errors
 
 Innoship returns:

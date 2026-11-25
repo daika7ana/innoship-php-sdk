@@ -15,14 +15,14 @@ class ValidationException extends InnoshipException
      * @param list<ErrorResponseItem> $errors
      */
     public function __construct(
-        public readonly ?ResponseInterface $response = null,
+        public readonly array $errors = [],
         string $message = '',
         int $code = 0,
+        ?Throwable $previous = null,
+        public readonly ?ResponseInterface $response = null,
         public readonly ?int $retryAfter = null,
         public readonly ?InnoshipError $error = null,
         public readonly ?string $correlationId = null,
-        public readonly array $errors = [],
-        ?Throwable $previous = null,
     ) {
         parent::__construct($message ?: 'Validation failed', $response?->getStatusCode() ?? $code, $previous);
     }

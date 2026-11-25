@@ -21,8 +21,9 @@ composer test -- --filter=OrdersResourceTest
 
 ## How the tests work
 
-- `tests/Support/TestClientFactory::create($handler)` returns a `Client` wired
-  to `FakeHttpClient` plus `GuzzleHttp\Psr7\HttpFactory`.
+- `tests/Support/TestClientFactory::create($handler)` returns
+  `[Client, FakeHttpClient]`: the client is wired to the fake transport, which
+  sends each request through the handler.
 - The handler receives the real PSR-7 request and returns a real PSR-7 response.
 - `tests/Support/ResponseFixtureFactory` holds canned JSON payloads.
 - Unit tests never touch the network, so no credentials are required.
