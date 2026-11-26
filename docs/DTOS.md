@@ -87,7 +87,7 @@ OrderRequest
 | `OrderResponse` | `clientOrderId`, `courierShipmentId`, `courier`, `courierParcelsBarcodes`, `price`, `trackPageUrl`, `trackingNumber` |
 | `OrderResponsePrice` | `amount`, `vat`, `totalAmount`, `currency`, `priceComponents` |
 | `PriceResponse` | `rates` (`PriceRate[]`), `correlationId` |
-| `LabelResponse` | `courier`, `contents` (base64 payload), `labels` |
+| `LabelResponse` | `courier`, `contents` (base64 payload), `labels`; a payload with neither key throws `UnexpectedStatusException` |
 | `DocumentResponse` | `courier`, `contents`, `documents` |
 | `DeleteOrderResponse` | `courier`, `success`, `message` |
 | `CourierDeleteParcelsResponse` | `success`, `messages`, `courierShipmentId`, `parcels` |

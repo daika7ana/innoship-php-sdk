@@ -88,6 +88,10 @@ foreach ($prices->rates as $rate) {
 | `getCustomParcelLabel(string $template, Courier\|string $courier, string $awb, string $parcel, ?LabelType $type = null, ?LabelFormat $format = null, bool $useFile = true): FileResponse` | `GET /api/CustomLabel/template/{template}/courier/{courier}/awb/{awb}/parcel/{parcel}` |
 
 `LabelResponse` carries `courier`, `contents` (base64), and `labels`.
+A 200 body with neither `contents` nor `labels` throws
+`UnexpectedStatusException` (`Innoship returned no label for this request.`)
+instead of returning an empty response. An empty `labels` list is assumed to be
+a valid bulk result, but this has not been exercised against the live API.
 `FileResponse` exposes the raw `stream`, `contentType`, optional `filename`, and
 a `contents(): string` helper for `downloadLabel()` and custom templates.
 

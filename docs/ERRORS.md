@@ -6,13 +6,13 @@ All exceptions extend `Daika7ana\Innoship\Exceptions\InnoshipException`.
 |-------------|-----------|
 | `401` | `AuthenticationException` |
 | `400`, `422` | `ValidationException` |
-| Any other non-2xx | `UnexpectedStatusException` |
+| Any other non-2xx, or a `200` label body with neither `contents` nor `labels` | `UnexpectedStatusException` |
 
 | Exception | Raised when |
 |-----------|-------------|
 | `AuthenticationException` | API key is empty, or the API answers `401` |
 | `ValidationException` | The API answers `400` or `422` |
-| `UnexpectedStatusException` | Any other unexpected status, including `403` and `5xx` |
+| `UnexpectedStatusException` | Any other unexpected status, including `403` and `5xx`, or a successful label response whose body carries neither `contents` nor `labels` |
 | `TransportException` | The HTTP layer fails (DNS, timeout, TLS, connection reset) |
 
 A `403` stays an `UnexpectedStatusException`; its `$e->error->isAuthenticationRelated()`
@@ -83,6 +83,11 @@ ASP.NET model-binding payloads (`{"errors":{"field":["message"]}}`) are
 flattened into the same `ErrorResponseItem` list.
 
 ## Unexpected responses
+
+A `200` label response without a `contents` or `labels` key is not a label:
+`getLabel()`, `getVoucherLabel()`, `getParcelLabel()` and `getBulk()` throw
+`UnexpectedStatusException` with `Innoship returned no label for this request.`
+so an empty payload cannot be mistaken for a real `LabelResponse`.
 
 `UnexpectedStatusException` exposes the PSR-7 response when one is available:
 

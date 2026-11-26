@@ -16,6 +16,7 @@ use Daika7ana\Innoship\Exceptions\TransportException;
 use Daika7ana\Innoship\Exceptions\UnexpectedStatusException;
 use Daika7ana\Innoship\Exceptions\ValidationException;
 use Daika7ana\Innoship\Support\ApiResponseMapper;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Label downloads and bulk label operations.
@@ -58,7 +59,7 @@ class LabelsResource
             ],
         );
 
-        return LabelResponse::fromArray(ApiResponseMapper::decodeJson($response));
+        return $this->labelFrom($response);
     }
 
     /**
@@ -129,7 +130,7 @@ class LabelsResource
             ],
         );
 
-        return LabelResponse::fromArray(ApiResponseMapper::decodeJson($response));
+        return $this->labelFrom($response);
     }
 
     /**
@@ -168,7 +169,7 @@ class LabelsResource
             ],
         );
 
-        return LabelResponse::fromArray(ApiResponseMapper::decodeJson($response));
+        return $this->labelFrom($response);
     }
 
     /**
@@ -205,7 +206,7 @@ class LabelsResource
             sprintf('/api/Label/bulk/%s', rawurlencode($operationId)),
         );
 
-        return LabelResponse::fromArray(ApiResponseMapper::decodeJson($response));
+        return $this->labelFrom($response);
     }
 
     /**
@@ -276,5 +277,25 @@ class LabelsResource
         );
 
         return FileResponse::fromResponse($response);
+    }
+
+    /**
+     * A 200 body with neither label shape would otherwise map to an empty
+     * LabelResponse that is indistinguishable from a real one.
+     *
+     * @throws AuthenticationException
+     * @throws ValidationException
+     * @throws UnexpectedStatusException
+     * @throws TransportException
+     */
+    private function labelFrom(ResponseInterface $response): LabelResponse
+    {
+        $data = ApiResponseMapper::decodeJson($response);
+
+        if (!array_key_exists('contents', $data) && !array_key_exists('labels', $data)) {
+            throw new UnexpectedStatusException($response, 'Innoship returned no label for this request.');
+        }
+
+        return LabelResponse::fromArray($data);
     }
 }

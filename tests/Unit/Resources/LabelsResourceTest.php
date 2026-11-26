@@ -9,6 +9,7 @@ use Daika7ana\Innoship\DTOs\Labels\BulkLabelRequest;
 use Daika7ana\Innoship\Enums\Courier;
 use Daika7ana\Innoship\Enums\LabelFormat;
 use Daika7ana\Innoship\Enums\LabelType;
+use Daika7ana\Innoship\Exceptions\UnexpectedStatusException;
 use Daika7ana\Innoship\Exceptions\ValidationException;
 use Daika7ana\Innoship\Tests\Support\ResponseFixtureFactory;
 use Daika7ana\Innoship\Tests\Support\TestClientFactory;
@@ -63,6 +64,30 @@ class LabelsResourceTest extends TestCase
         ])));
         $this->assertSame(1, $label->courier);
         $this->assertSame(['pdf-1'], $label->labels->all());
+    }
+
+    public function testGetLabelAcceptsContentsOnlyPayload(): void
+    {
+        [$client, ] = TestClientFactory::create(
+            static fn() => ResponseFixtureFactory::json(['courier' => 1, 'contents' => '']),
+        );
+
+        $label = $client->labels()->getLabel(1, 'AWB123');
+
+        $this->assertSame('', $label->contents);
+        $this->assertSame([], $label->labels->all());
+    }
+
+    public function testGetLabelThrowsWhenPayloadHasNoLabel(): void
+    {
+        [$client, ] = TestClientFactory::create(
+            static fn() => ResponseFixtureFactory::json(['courier' => 1]),
+        );
+
+        $this->expectException(UnexpectedStatusException::class);
+        $this->expectExceptionMessage('Innoship returned no label for this request.');
+
+        $client->labels()->getLabel(1, 'AWB123');
     }
 
     public function testDownloadLabelReturnsRawFile(): void

@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-26
+
+### Changed
+
+- **Breaking:** label endpoints (`getLabel()`, `getVoucherLabel()`, `getParcelLabel()`, `getBulk()`) throw `UnexpectedStatusException` (`Innoship returned no label for this request.`) when a 200 body carries neither `contents` nor `labels`, instead of returning an empty `LabelResponse`; callers relying on the empty response must now catch the exception.
+
 ## [1.4.0] - 2026-11-25
 
 ### Changed
